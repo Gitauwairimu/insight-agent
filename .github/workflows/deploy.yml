@@ -38,7 +38,9 @@ jobs:
       - name: Bootstrap Infrastructure
         run: |
           cd infrastructure
-          terraform init -backend=false
+
+          # Full initialization (including backend)
+          terraform init
           
           # First create only the absolute essentials
           terraform apply -auto-approve \
