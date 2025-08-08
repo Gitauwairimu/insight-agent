@@ -1,16 +1,17 @@
+# infrastructure/variables.tf
 variable "project_id" {
-  description = "GCP Project ID"
+  description = "The GCP project ID"
   type        = string
 }
 
 variable "region" {
-  description = "GCP Region"
+  description = "The GCP region to deploy resources"
   type        = string
   default     = "us-central1"
 }
 
 variable "image_tag" {
-  description = "Container image tag"
+  description = "The container image tag to deploy"
   type        = string
   default     = "latest"
 }
