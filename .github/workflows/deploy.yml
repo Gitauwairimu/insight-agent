@@ -87,11 +87,11 @@ jobs:
           cd infrastructure
 
           terraform import google_service_account.insight_agent \
-            projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com
+            projects/${GCP_PROJECT_ID}/serviceAccounts/insight-agent-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com
 
 
           terraform apply -auto-approve \
-            -var="project_id=$PROJECT_ID" \
+            -var="project_id=$GCP_PROJECT_ID" \
             -var="image_tag=init"
 
       # --- Phase 4: Build and Push Container ---
