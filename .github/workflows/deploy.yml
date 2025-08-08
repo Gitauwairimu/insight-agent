@@ -35,13 +35,13 @@ jobs:
       # =============================================
       # PHASE 1: Bootstrap Infrastructure (State Bucket + APIs)
       # =============================================
-      - name: Enable Service Usage API
-        run: |
-          gcloud services enable serviceusage.googleapis.com \
-            --project=${{ secrets.GCP_PROJECT_ID }}
-          sleep 30  # Wait for API to propagate
-        env:
-          CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+      # - name: Enable Service Usage API
+      #   run: |
+      #     gcloud services enable serviceusage.googleapis.com \
+      #       --project=${{ secrets.GCP_PROJECT_ID }}
+      #     sleep 30  # Wait for API to propagate
+      #   env:
+      #     CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Bootstrap Infrastructure
         run: |
