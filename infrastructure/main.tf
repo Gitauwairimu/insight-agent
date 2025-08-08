@@ -7,11 +7,6 @@ terraform {
     }
   }
 
-  # Initial local state (will migrate to GCS later)
-  backend "local" {
-    path = ".terraform/terraform.tfstate"
-  }
-}
 
 provider "google" {
   project = var.project_id
