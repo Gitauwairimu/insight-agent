@@ -50,11 +50,23 @@ jobs:
             -target=google_project_service.required_apis \
             -var="project_id=$PROJECT_ID"
 
+      # --- Phase 2: Create backend.tf and Reinit ---
       - name: Reconfigure to Use Remote Backend
         run: |
           cd infrastructure
-          STATE_BUCKET=$(terraform output -raw state_bucket)
 
+          # Ensure the bucket exists first (this applies only if you did not already apply it)
+          terraform apply -auto-approve -target=google_storage_bucket.tf_state -var="project_id=$PROJECT_ID"
+
+          # Only now extract the state bucket output
+          STATE_BUCKET=$(terraform output -raw state_bucket || echo "")
+
+          if [ -z "$STATE_BUCKET" ]; then
+            echo "Error: state_bucket output is empty. Check if terraform output is defined."
+            exit 1
+          fi
+
+          # Write backend config with valid value
           cat > backend.tf <<EOF
           terraform {
             backend "gcs" {
@@ -64,8 +76,9 @@ jobs:
           }
           EOF
 
+          # Re-init without conflicting flags
           rm -rf .terraform .terraform.lock.hcl
-          terraform init -migrate-state -force-copy
+          terraform init -migrate-state
 
       # --- Phase 3: Deploy Infrastructure ---
       - name: Deploy Full Infrastructure
