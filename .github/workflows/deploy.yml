@@ -35,9 +35,15 @@ jobs:
       # =============================================
       # PHASE 1: Bootstrap Infrastructure (State Bucket + APIs)
       # =============================================
+      - name: Enable Service Usage API
+        run: |
+          gcloud services enable serviceusage.googleapis.com \
+            --project=${{ secrets.GCP_PROJECT_ID }}
+        env:
+          CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+
       - name: Bootstrap Infrastructure
         run: |
-          gcloud services enable serviceusage.googleapis.com --project=$PROJECT_ID
           cd infrastructure
 
           # Full initialization (including backend)
