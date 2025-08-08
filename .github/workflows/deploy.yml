@@ -1,0 +1,39 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+      
+      - name: Build and push Docker image
+        run: |
+          cd app
+          docker build -t app .
+          docker tag app ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA
+          docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Terraform Apply
+        run: |
+          cd infrastructure
+          terraform init
+          terraform apply -auto-approve \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="image_tag=$GITHUB_SHA"
