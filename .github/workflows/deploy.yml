@@ -39,6 +39,7 @@ jobs:
         run: |
           gcloud services enable serviceusage.googleapis.com \
             --project=${{ secrets.GCP_PROJECT_ID }}
+          sleep 30  # Wait for API to propagate
         env:
           CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
 
