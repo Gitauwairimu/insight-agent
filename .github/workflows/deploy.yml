@@ -36,6 +36,12 @@ jobs:
         with:
           terraform_version: 1.6.6
           terraform_wrapper: false
+      
+      - name: Clean terraform init
+        run: |
+          cd infrastructure
+          rm -rf .terraform .terraform.lock.hcl
+          terraform init
 
       # ========================
       # PHASE 1: Initial Setup
