@@ -50,7 +50,6 @@ jobs:
             -target=google_project_service.required_apis \
             -var="project_id=$PROJECT_ID"
 
-      # --- Phase 2: Create backend.tf and Reinit ---
       - name: Reconfigure to Use Remote Backend
         run: |
           cd infrastructure
@@ -66,7 +65,7 @@ jobs:
           EOF
 
           rm -rf .terraform .terraform.lock.hcl
-          terraform init -migrate-state -force-copy -reconfigure
+          terraform init -migrate-state -force-copy
 
       # --- Phase 3: Deploy Infrastructure ---
       - name: Deploy Full Infrastructure
