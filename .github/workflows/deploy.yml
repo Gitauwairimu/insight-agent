@@ -37,6 +37,7 @@ jobs:
       # =============================================
       - name: Bootstrap Infrastructure
         run: |
+          gcloud services enable serviceusage.googleapis.com --project=$PROJECT_ID
           cd infrastructure
 
           # Full initialization (including backend)
