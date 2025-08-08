@@ -10,28 +10,45 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'  # Required for auth action
+
     steps:
       - uses: actions/checkout@v3
       
+      # Authenticate to GCP
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
       
+      # Set up gcloud CLI for Docker auth
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
       
+      # Configure Docker to use gcloud as credential helper
+      - name: Configure Docker auth
+        run: |-
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+      
+      # Build and push container
       - name: Build and push Docker image
-        run: |
+        run: |-
           cd app
-          docker build -t app .
-          docker tag app ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA
+          docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA .
           docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       
+      # Deploy infrastructure
       - name: Terraform Apply
-        run: |
+        run: |-
           cd infrastructure
           terraform init
           terraform apply -auto-approve \
