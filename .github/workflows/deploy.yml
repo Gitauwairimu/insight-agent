@@ -35,15 +35,33 @@ jobs:
       # =============================================
       # PHASE 1: Bootstrap Infrastructure (State Bucket + APIs)
       # =============================================
-      - name: Bootstrap Terraform State
-        timeout-minutes: 5
+      - name: Bootstrap Infrastructure
         run: |
           cd infrastructure
-          terraform init
+          terraform init -backend=false
+          
+          # First create only the absolute essentials
           terraform apply -auto-approve \
             -target=google_storage_bucket.tf_state \
             -target=google_project_service.required_apis \
             -var="project_id=${{ secrets.GCP_PROJECT_ID }}"
+          
+          # Then create Artifact Registry with proper arguments
+          terraform apply -auto-approve \
+            -target=google_artifact_registry_repository.insight_agent \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}"
+          
+          # Migrate state
+          STATE_BUCKET=$(terraform output -raw state_bucket)
+          cat > backend.tf <<EOF
+          terraform {
+            backend "gcs" {
+              bucket = "$STATE_BUCKET"
+              prefix = "terraform/state"
+            }
+          }
+          EOF
+          terraform init -migrate-state -force-copy
 
       # =============================================
       # PHASE 2: Migrate Terraform State to GCS

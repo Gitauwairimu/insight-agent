@@ -60,14 +60,17 @@ resource "google_project_service" "required_apis" {
 # 3. ARTIFACT REGISTRY
 # ========================
 resource "google_artifact_registry_repository" "insight_agent" {
-  name        = "insight-agent"
-  location    = var.region
-  format      = "DOCKER"
-  description = "Container repository for Insight Agent"
+  repository_id = "insight-agent" 
+  location      = var.region      
+  format        = "DOCKER"        
+  description   = "Stores Insight Agent container images"
   
+  labels = {
+    environment = "dev"
+  }
+
   depends_on = [
-    google_project_service.required_apis,
-    google_storage_bucket.tf_state
+    google_project_service.required_apis
   ]
 }
 
