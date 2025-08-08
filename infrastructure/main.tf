@@ -7,10 +7,9 @@ terraform {
     }
   }
 
-  backend "gcs" {
-    # Configure this with your GCS bucket details for state storage
-    # bucket = "your-tf-state-bucket"
-    # prefix = "terraform/state"
+  # Initial local state (will migrate to GCS later)
+  backend "local" {
+    path = ".terraform/terraform.tfstate"
   }
 }
 
@@ -19,53 +18,94 @@ provider "google" {
   region  = var.region
 }
 
-# Enable required APIs
+# ========================
+# 1. STATE STORAGE BUCKET
+# ========================
+resource "google_storage_bucket" "tf_state" {
+  name                        = "${var.project_id}-tfstate-${random_id.bucket_suffix.hex}"
+  location                    = var.region
+  force_destroy               = false
+  uniform_bucket_level_access = true
+  
+  versioning {
+    enabled = true
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+# ========================
+# 2. REQUIRED APIs
+# ========================
 resource "google_project_service" "required_apis" {
   for_each = toset([
+    "storage.googleapis.com",
     "run.googleapis.com",
     "artifactregistry.googleapis.com",
     "cloudbuild.googleapis.com",
-    "iam.googleapis.com"
+    "iam.googleapis.com",
+    "serviceusage.googleapis.com"
   ])
-  service = each.key
+  service            = each.key
   disable_on_destroy = false
 }
 
-# Artifact Registry for container images
+# ========================
+# 3. ARTIFACT REGISTRY
+# ========================
 resource "google_artifact_registry_repository" "insight_agent" {
   name        = "insight-agent"
   location    = var.region
   format      = "DOCKER"
-  description = "Repository for Insight Agent container images"
-  depends_on  = [google_project_service.required_apis]
+  description = "Container repository for Insight Agent"
+  
+  depends_on = [
+    google_project_service.required_apis,
+    google_storage_bucket.tf_state
+  ]
 }
 
-# Service Account for Cloud Run
+# ========================
+# 4. SERVICE ACCOUNT
+# ========================
 resource "google_service_account" "insight_agent" {
   account_id   = "insight-agent-sa"
   display_name = "Insight Agent Service Account"
-  description  = "Service account for running Insight Agent on Cloud Run"
-  depends_on   = [google_project_service.required_apis]
+  description  = "Identity for Cloud Run service"
+
+  depends_on = [
+    google_project_service.required_apis
+  ]
 }
 
-# IAM roles for the service account
-resource "google_project_iam_member" "cloud_run_sa_roles" {
+# Minimal IAM roles for Cloud Run SA
+resource "google_project_iam_member" "cloud_run_roles" {
   for_each = toset([
-    "roles/run.admin",
     "roles/artifactregistry.reader",
-    "roles/iam.serviceAccountUser"
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter"
   ])
   project = var.project_id
   role    = each.value
   member  = "serviceAccount:${google_service_account.insight_agent.email}"
-  depends_on = [google_service_account.insight_agent]
+
+  depends_on = [
+    google_service_account.insight_agent
+  ]
 }
 
-# Cloud Run Service
+# ========================
+# 5. CLOUD RUN SERVICE
+# ========================
 resource "google_cloud_run_service" "insight_agent" {
   name     = "insight-agent"
   location = var.region
-  description = "Insight Agent API service"
   
   template {
     spec {
@@ -82,13 +122,7 @@ resource "google_cloud_run_service" "insight_agent" {
         }
       }
       service_account_name = google_service_account.insight_agent.email
-      timeout_seconds = 300
-    }
-
-    metadata {
-      annotations = {
-        "run.googleapis.com/client-name" = "terraform"
-      }
+      timeout_seconds     = 300
     }
   }
 
@@ -98,20 +132,40 @@ resource "google_cloud_run_service" "insight_agent" {
   }
 
   depends_on = [
-    google_project_service.required_apis,
-    google_artifact_registry_repository.insight_agent
+    google_artifact_registry_repository.insight_agent,
+    google_project_iam_member.cloud_run_roles
   ]
 }
 
-# Make the service publicly accessible
+# ========================
+# 6. ACCESS CONTROL
+# ========================
 resource "google_cloud_run_service_iam_member" "public_access" {
   location = google_cloud_run_service.insight_agent.location
   service  = google_cloud_run_service.insight_agent.name
   role     = "roles/run.invoker"
   member   = "allUsers"
+
+  depends_on = [
+    google_cloud_run_service.insight_agent
+  ]
 }
 
-# Output the service URL
-output "service_url" {
+# ========================
+# OUTPUTS
+# ========================
+output "artifact_registry" {
+  value = google_artifact_registry_repository.insight_agent.name
+}
+
+output "cloud_run_url" {
   value = google_cloud_run_service.insight_agent.status[0].url
+}
+
+output "state_bucket" {
+  value = google_storage_bucket.tf_state.name
+}
+
+output "service_account_email" {
+  value = google_service_account.insight_agent.email
 }
