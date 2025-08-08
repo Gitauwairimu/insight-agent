@@ -31,24 +31,56 @@ jobs:
       
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
-      
-      # First apply Terraform to create infrastructure
-      - name: Terraform Apply Infrastructure
+
+      # =============================================
+      # PHASE 1: Bootstrap Infrastructure (State Bucket + APIs)
+      # =============================================
+      - name: Bootstrap Terraform State
+        timeout-minutes: 5
         run: |
           cd infrastructure
           terraform init
           terraform apply -auto-approve \
+            -target=google_storage_bucket.tf_state \
             -target=google_project_service.required_apis \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}"
+
+      # =============================================
+      # PHASE 2: Migrate Terraform State to GCS
+      # =============================================
+      - name: Migrate State to GCS
+        run: |
+          cd infrastructure
+          STATE_BUCKET=$(terraform output -raw state_bucket)
+          cat > backend.tf <<EOF
+          terraform {
+            backend "gcs" {
+              bucket = "$STATE_BUCKET"
+              prefix = "terraform/state"
+            }
+          }
+          EOF
+          terraform init -migrate-state -force-copy
+
+      # =============================================
+      # PHASE 3: Deploy Core Infrastructure
+      # =============================================
+      - name: Provision Base Infrastructure
+        run: |
+          cd infrastructure
+          terraform apply -auto-approve \
             -target=google_artifact_registry_repository.insight_agent \
+            -target=google_service_account.insight_agent \
             -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="image_tag=init"
-      
-      # Configure Docker auth after infrastructure exists
-      - name: Configure Docker auth
+
+      # =============================================
+      # PHASE 4: Build and Push Container
+      # =============================================
+      - name: Configure Docker Auth
         run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-      
-      # Build and push image to now-existing repository
-      - name: Build and push Docker image
+
+      - name: Build and Push Image
         run: |
           cd app
           docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA .
@@ -56,9 +88,11 @@ jobs:
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: us-central1
-      
-      # Final Terraform apply with the new image
-      - name: Terraform Apply Deployment
+
+      # =============================================
+      # PHASE 5: Final Deployment (Cloud Run)
+      # =============================================
+      - name: Deploy Cloud Run Service
         run: |
           cd infrastructure
           terraform apply -auto-approve \
