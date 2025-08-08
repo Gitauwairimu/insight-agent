@@ -1,3 +1,4 @@
+# .github/workflows/deploy.yml
 name: Deploy to Cloud Run
 
 on:
@@ -6,6 +7,7 @@ on:
 
 env:
   REGION: us-central1
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
 
 jobs:
   deploy:
@@ -16,40 +18,49 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      
+
       # Authenticate to GCP
-      - id: 'auth'
-        uses: 'google-github-actions/auth@v1'
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
-      
+          workload_identity_provider: ${{ secrets.GCP_WI_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
       # Set up gcloud CLI
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
-      
+
+      # Set up Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.12.2
 
-      # =============================================
-      # PHASE 1: Initial Local State Setup
-      # =============================================
-      - name: Initialize Local State
+      # ========================
+      # PHASE 1: Initial Setup
+      # ========================
+      - name: Initialize Terraform
         run: |
-          terraform init
-          
           cd infrastructure
           terraform init -backend=false
-          terraform apply -auto-approve \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
-            -var="image_tag=init"
 
-      # =============================================
-      # PHASE 2: Migrate to GCS Backend
-      # =============================================
+      # ========================
+      # PHASE 2: Create State Bucket
+      # ========================
+      - name: Create State Resources
+        run: |
+          cd infrastructure
+          terraform apply -auto-approve \
+            -target=google_storage_bucket.tf_state \
+            -target=google_project_service.required_apis \
+            -var="project_id=$PROJECT_ID"
+
+      # ========================
+      # PHASE 3: Migrate State
+      # ========================
       - name: Configure Remote State
         run: |
           cd infrastructure
@@ -64,27 +75,43 @@ jobs:
           EOF
           terraform init -migrate-state -force-copy
 
-      # =============================================
-      # PHASE 3: Build and Push Container
-      # =============================================
+      # ========================
+      # PHASE 4: Full Infrastructure
+      # ========================
+      - name: Deploy Core Infrastructure
+        run: |
+          cd infrastructure
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="image_tag=init"
+
+      # ========================
+      # PHASE 5: Build & Push Container
+      # ========================
       - name: Configure Docker Auth
-        run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
 
       - name: Build and Push Image
         run: |
           cd app
-          docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA .
-          docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA
-        env:
-          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          REGION: us-central1
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
 
-      # =============================================
-      # PHASE 4: Final Deployment
-      # =============================================
-      - name: Deploy Updated Infrastructure
+      # ========================
+      # PHASE 6: Final Deployment
+      # ========================
+      - name: Deploy Cloud Run Service
         run: |
           cd infrastructure
           terraform apply -auto-approve \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="project_id=$PROJECT_ID" \
             -var="image_tag=$GITHUB_SHA"
+
+      # ========================
+      # PHASE 7: Verification
+      # ========================
+      - name: Verify Deployment
+        run: |
+          SERVICE_URL=$(cd infrastructure && terraform output -raw cloud_run_url)
+          curl -s $SERVICE_URL/analyze -H "Content-Type: application/json" \
+            -d '{"text":"Testing deployment"}' | jq .
