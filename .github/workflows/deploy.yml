@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
-      id-token: 'write'  # Required for auth action
+      id-token: 'write'
 
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
       
-      # Set up gcloud CLI for Docker auth
+      # Set up gcloud CLI
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v1
         with:
@@ -32,25 +32,35 @@ jobs:
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
       
-      # Configure Docker to use gcloud as credential helper
-      - name: Configure Docker auth
-        run: |-
-          gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+      # First apply Terraform to create infrastructure
+      - name: Terraform Apply Infrastructure
+        run: |
+          cd infrastructure
+          terraform init
+          terraform apply -auto-approve \
+            -target=google_project_service.required_apis \
+            -target=google_artifact_registry_repository.insight_agent \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="image_tag=init"
       
-      # Build and push container
+      # Configure Docker auth after infrastructure exists
+      - name: Configure Docker auth
+        run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+      
+      # Build and push image to now-existing repository
       - name: Build and push Docker image
-        run: |-
+        run: |
           cd app
           docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA .
           docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/insight-agent/insight-agent:$GITHUB_SHA
         env:
           PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REGION: us-central1
       
-      # Deploy infrastructure
-      - name: Terraform Apply
-        run: |-
+      # Final Terraform apply with the new image
+      - name: Terraform Apply Deployment
+        run: |
           cd infrastructure
-          terraform init
           terraform apply -auto-approve \
             -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="image_tag=$GITHUB_SHA"
