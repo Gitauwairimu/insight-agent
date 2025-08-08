@@ -33,87 +33,37 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.12.2
-      
-      - name: Migrate State
-        run: |
-          cd infrastructure
-          terraform init -reconfigure -upgrade
-          if [ -f terraform.tfstate ]; then
-            terraform state push terraform.tfstate
-          fi
 
       # =============================================
-      # PHASE 1: Bootstrap Infrastructure (State Bucket + APIs)
+      # PHASE 1: Initial Local State Setup
       # =============================================
-      # - name: Enable Service Usage API
-      #   run: |
-      #     gcloud services enable serviceusage.googleapis.com \
-      #       --project=${{ secrets.GCP_PROJECT_ID }}
-      #     sleep 30  # Wait for API to propagate
-      #   env:
-      #     CLOUDSDK_CORE_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
-
-      - name: Bootstrap Infrastructure
+      - name: Initialize Local State
         run: |
           cd infrastructure
-
-          # Full initialization (including backend)
-          terraform init
-          
-          # First create only the absolute essentials
+          terraform init -backend=false
           terraform apply -auto-approve \
-            -target=google_storage_bucket.tf_state \
-            -target=google_project_service.required_apis \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}"
-          
-          # Then create Artifact Registry with proper arguments
-          terraform apply -auto-approve \
-            -target=google_artifact_registry_repository.insight_agent \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}"
-          
-          # Migrate state
-          STATE_BUCKET=$(terraform output -raw state_bucket)
-          cat > backend.tf <<EOF
-          terraform {
-            backend "gcs" {
-              bucket = "$STATE_BUCKET"
-              prefix = "terraform/state"
-            }
-          }
-          EOF
-          terraform init -migrate-state -force-copy
-
-      # =============================================
-      # PHASE 2: Migrate Terraform State to GCS
-      # =============================================
-      - name: Migrate State to GCS
-        run: |
-          cd infrastructure
-          STATE_BUCKET=$(terraform output -raw state_bucket)
-          cat > backend.tf <<EOF
-          terraform {
-            backend "gcs" {
-              bucket = "$STATE_BUCKET"
-              prefix = "terraform/state"
-            }
-          }
-          EOF
-          terraform init -migrate-state -force-copy
-
-      # =============================================
-      # PHASE 3: Deploy Core Infrastructure
-      # =============================================
-      - name: Provision Base Infrastructure
-        run: |
-          cd infrastructure
-          terraform apply -auto-approve \
-            -target=google_artifact_registry_repository.insight_agent \
-            -target=google_service_account.insight_agent \
             -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="image_tag=init"
 
       # =============================================
-      # PHASE 4: Build and Push Container
+      # PHASE 2: Migrate to GCS Backend
+      # =============================================
+      - name: Configure Remote State
+        run: |
+          cd infrastructure
+          STATE_BUCKET=$(terraform output -raw state_bucket)
+          cat > backend.tf <<EOF
+          terraform {
+            backend "gcs" {
+              bucket = "$STATE_BUCKET"
+              prefix = "terraform/state"
+            }
+          }
+          EOF
+          terraform init -migrate-state -force-copy
+
+      # =============================================
+      # PHASE 3: Build and Push Container
       # =============================================
       - name: Configure Docker Auth
         run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
@@ -128,9 +78,9 @@ jobs:
           REGION: us-central1
 
       # =============================================
-      # PHASE 5: Final Deployment (Cloud Run)
+      # PHASE 4: Final Deployment
       # =============================================
-      - name: Deploy Cloud Run Service
+      - name: Deploy Updated Infrastructure
         run: |
           cd infrastructure
           terraform apply -auto-approve \
