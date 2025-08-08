@@ -39,6 +39,8 @@ jobs:
       # =============================================
       - name: Initialize Local State
         run: |
+          terraform init
+          
           cd infrastructure
           terraform init -backend=false
           terraform apply -auto-approve \
