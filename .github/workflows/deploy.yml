@@ -78,7 +78,7 @@ jobs:
 
           # Re-init without conflicting flags
           rm -rf .terraform .terraform.lock.hcl
-          terraform init -migrate-state
+          terraform init -migrate-state -input=false
 
       # --- Phase 3: Deploy Infrastructure ---
       - name: Deploy Full Infrastructure
