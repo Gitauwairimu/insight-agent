@@ -154,18 +154,18 @@ jobs:
           #   -target=google_cloud_run_service_iam_member.public_access
           
 
-                    # Ensure service account key file exists
-          echo "$GCP_SA_KEY" > "$HOME/key.json"
+          #           # Ensure service account key file exists
+          # echo "$GCP_SA_KEY" > "$HOME/key.json"
 
-          # Authenticate gcloud (so Artifact Registry pushes work too)
-          gcloud auth activate-service-account --key-file="$HOME/key.json"
+          # # Authenticate gcloud (so Artifact Registry pushes work too)
+          # gcloud auth activate-service-account --key-file="$HOME/key.json"
 
-          # Set default project & region
-          gcloud config set project "$GCP_PROJECT_ID"
-          gcloud config set run/region "us-central1"
+          # # Set default project & region
+          # gcloud config set project "$GCP_PROJECT_ID"
+          # gcloud config set run/region "us-central1"
 
-          # Export creds for Terraform provider
-          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+          # # Export creds for Terraform provider
+          # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
 
 
 
