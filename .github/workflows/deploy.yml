@@ -101,27 +101,30 @@ jobs:
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
 
-      # Deploy infrastructure (assume required resources already exist)
-      - name: Deploy Infrastructure kk
+      - name: Deploy Infrastructure (assume required resources already exist)
         run: |
           cd infrastructure
 
-          # Import existing state bucket
+          # 1. Initialize Terraform with backend
+          terraform init \
+            -backend-config="bucket=${PROJECT_ID}-tfstate-insight_agent" \
+            -backend-config="credentials=$HOME/key.json" \
+            -backend-config="prefix=terraform/state"
+
+          # 2. Import existing resources into state (safe to rerun)
           terraform import \
             google_storage_bucket.tf_state \
             "${PROJECT_ID}-tfstate-insight_agent" || true
 
-          # Import existing Artifact Registry repo
           terraform import \
             google_artifact_registry_repository.insight_agent \
             projects/${PROJECT_ID}/locations/us-central1/repositories/insight_agent || true
 
-          # Import existing service account
           terraform import \
             google_service_account.insight_agent \
             projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com || true
 
-          # Apply remaining infrastructure
+          # 3. Apply changes for the rest of the infrastructure
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
