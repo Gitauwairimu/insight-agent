@@ -13,10 +13,6 @@ provider "google" {
   project     = var.project_id
   region      = var.region
   credentials = file(var.credentials_file)
-    add_terraform_attribution_label = false
-  batching {
-    enable = false
-  }
 }
 
 # ========================
