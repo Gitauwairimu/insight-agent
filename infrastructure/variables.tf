@@ -15,3 +15,9 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+
+variable "credentials_file" {
+  description = "Path to the GCP service account JSON key file"
+  type        = string
+}
