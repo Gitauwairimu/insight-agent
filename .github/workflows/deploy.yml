@@ -45,17 +45,19 @@ jobs:
         run: |
           cd infrastructure
 
-          terraform import \
-            -var="project_id=$PROJECT_ID" \
-            google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
+          # Import bucket only if not already in state
+          if ! terraform state list | grep -q google_storage_bucket.tf_state; then
+            terraform import \
+              -var="project_id=$PROJECT_ID" \
+              google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
+          fi
 
-
-
+          # Apply only required services (no random_id)
           terraform apply -auto-approve \
             -target=google_storage_bucket.tf_state \
-            -target=random_id.bucket_suffix \
             -target=google_project_service.required_apis \
             -var="project_id=$PROJECT_ID"
+
 
       # --- Phase 2: Create backend.tf and Reinit ---
       - name: Reconfigure to Use Remote Backend
