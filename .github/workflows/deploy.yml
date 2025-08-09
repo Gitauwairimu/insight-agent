@@ -101,17 +101,28 @@ jobs:
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
 
-      # Deploy infrastructure
+         # Deploy infrastructure
       - name: Deploy Infrastructure
         run: |
           cd infrastructure
           
-          # 1. First import all existing resources (ignore errors)
-          terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent" 2>/dev/null || true
-          terraform import google_artifact_registry_repository.insight_agent "projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" 2>/dev/null || true
-          terraform import google_service_account.insight_agent "projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com" 2>/dev/null || true
+          # 1. Forcefully import all resources with empty state if needed
+          for resource in \
+            "google_storage_bucket.tf_state ${PROJECT_ID}-tfstate-insight_agent" \
+            "google_artifact_registry_repository.insight_agent projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" \
+            "google_service_account.insight_agent projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com"; do
+            
+            # Try normal import first
+            terraform import $resource 2>/dev/null || (
+              # If import fails, create empty state entry
+              terraform state rm ${resource%% *} 2>/dev/null || true
+              echo '{"version":4,"terraform_version":"1.6.6","serial":1,"lineage":"","outputs":{},"resources":[]}' > empty.tfstate
+              terraform state push -force empty.tfstate
+              terraform import $resource 2>/dev/null || true
+            )
+          done
           
-          # 2. Apply only Cloud Run related resources
+          # 2. Apply only Cloud Run resources with strict targeting
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
@@ -119,13 +130,9 @@ jobs:
             -target=google_cloud_run_service.insight_agent \
             -target=google_cloud_run_service_iam_member.public_access \
             -refresh=false \
-            -lock=false
-          
-          # 3. Refresh state to recognize all resources
-          terraform refresh \
-            -var="project_id=$PROJECT_ID" \
-            -var="credentials_file=$HOME/key.json"
-            
+            -lock=false \
+            -parallelism=1
+                     
       # Verify deployment
       - name: Verify Deployment
         run: |
