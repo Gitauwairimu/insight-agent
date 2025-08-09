@@ -45,12 +45,10 @@ jobs:
         run: |
           cd infrastructure
 
-          if ! gcloud storage buckets describe "${PROJECT_ID}-tfstate-insight_agent" --project "$PROJECT_ID" >/dev/null 2>&1; then
-            terraform apply -auto-approve \
-              -target=google_storage_bucket.tf_state \
-              -target=google_project_service.required_apis \
-              -var="project_id=$PROJECT_ID"
-          fi
+          terraform import \
+            -var="project_id=$PROJECT_ID" \
+            google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
+
 
 
           terraform apply -auto-approve \
