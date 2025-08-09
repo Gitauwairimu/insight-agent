@@ -58,6 +58,8 @@ jobs:
         run: |
           cd infrastructure
 
+          echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
+
           # Import bucket only if not already in state
           if ! terraform state list | grep -q google_storage_bucket.tf_state; then
             terraform import \
