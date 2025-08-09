@@ -85,10 +85,22 @@ jobs:
       - name: Deploy Full Infrastructure
         run: |
           cd infrastructure
-          
-          terraform import google_storage_bucket.tf_state my-existing-bucket-name
-          terraform import google_artifact_registry_repository.insight_agent projects/$GCP_PROJECT_ID/locations/$REGION/repositories/insight-agent
-          terraform import google_service_account.insight_agent projects/$GCP_PROJECT_ID/serviceAccounts/insight-agent-sa@$GCP_PROJECT_ID.iam.gserviceaccount.com
+
+
+          terraform import \
+            -var="project_id=$PROJECT_ID" \
+            google_storage_bucket.tf_state my-existing-bucket-name
+
+          terraform import \
+            -var="project_id=$PROJECT_ID" \
+            google_artifact_registry_repository.insight_agent \
+            projects/$PROJECT_ID/locations/$REGION/repositories/insight-agent
+
+          terraform import \
+            -var="project_id=$PROJECT_ID" \
+            google_service_account.insight_agent \
+            projects/$PROJECT_ID/serviceAccounts/insight-agent-sa@$PROJECT_ID.iam.gserviceaccount.com
+
 
 
           
