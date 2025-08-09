@@ -131,7 +131,7 @@ resource "google_cloud_run_service" "insight_agent" {
 
   depends_on = [
     google_artifact_registry_repository.insight_agent,
-    google_project_iam_member.cloud_run_roles
+#    google_project_iam_member.cloud_run_roles
   ]
 }
 
