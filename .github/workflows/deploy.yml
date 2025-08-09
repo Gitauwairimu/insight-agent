@@ -102,7 +102,10 @@ jobs:
         run: |
           cd infrastructure
 
+          # Remove all existing state entries
           terraform state rm google_storage_bucket.tf_state
+          terraform state rm google_artifact_registry_repository.insight_agent
+          terraform state rm google_service_account.insight_agent
 
           terraform import \
             -var="project_id=$PROJECT_ID" \
