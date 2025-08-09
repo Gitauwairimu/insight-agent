@@ -142,6 +142,9 @@ jobs:
             -target=google_cloud_run_service.insight_agent \
             -target=google_cloud_run_service_iam_member.public_access
 
+          echo 'aFETR # 4. Deploy Cloud Run service'
+          echo '..........................'
+
           # 5. Final full apply to sync everything
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
