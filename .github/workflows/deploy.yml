@@ -165,7 +165,11 @@ jobs:
           gcloud config set run/region "us-central1"
 
           # Export creds for Terraform provider
-          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+          # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+
+          # echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
+          cat "$HOME/key.json" | jq . > /dev/null  # Validate JSON structure
+
 
 
 
