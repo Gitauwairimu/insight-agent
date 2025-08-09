@@ -105,27 +105,17 @@ jobs:
         run: |
           cd infrastructure
 
-          # 1. Init Terraform with your GCS backend (ensures state persists)
-          terraform init -reconfigure \
-            -backend-config="bucket=${PROJECT_ID}-tfstate-insight_agent" \
-            -backend-config="prefix=terraform/state"
+          # Import existing resources into Terraform state, ignore errors if already imported
+          terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent" 2>/dev/null || true
+          terraform import google_artifact_registry_repository.insight_agent "projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" 2>/dev/null || true
+          terraform import google_service_account.insight_agent "projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com" 2>/dev/null || true
 
-          # 2. Import existing resources (ignore errors if they already exist in state)
-          terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent" || true
-          terraform import google_artifact_registry_repository.insight_agent "projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" || true
-          terraform import google_service_account.insight_agent "projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com" || true
-
-          # 3. Plan normally (no -target, no skipping refresh)
-          terraform plan \
-            -var="project_id=$PROJECT_ID" \
-            -var="credentials_file=$HOME/key.json" \
-            -var="image_tag=$GITHUB_SHA"
-
-          # 4. Apply everything
+          # Now apply the Terraform plan safely
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
             -var="image_tag=$GITHUB_SHA"
+
 
             
       # Verify deployment
