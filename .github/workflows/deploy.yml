@@ -102,9 +102,9 @@ jobs:
         run: |
           cd infrastructure
 
-          terraform import \
-            -var="project_id=$PROJECT_ID" \
-            google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
+          # terraform import \
+          #   -var="project_id=$PROJECT_ID" \
+          #   google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
 
           # Import the existing Artifact Registry repository
           terraform import \
