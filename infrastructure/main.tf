@@ -61,7 +61,15 @@ resource "google_artifact_registry_repository" "insight_agent" {
   
   labels = {
     environment = "dev"
+  
+  lifecycle {
+    ignore_changes = [
+      location,
+      format,
+      description
+    ]
   }
+
 
   depends_on = [
     google_project_service.required_apis
