@@ -64,18 +64,12 @@ jobs:
         run: |
           cd infrastructure
 
-          # Ensure the bucket exists first (this applies only if you did not already apply it)
-          terraform apply -auto-approve -target=google_storage_bucket.tf_state -var="project_id=$PROJECT_ID"
+          cd infrastructure
 
-          # Only now extract the state bucket output
-          STATE_BUCKET=$(terraform output -raw state_bucket || echo "")
+          # Extract state bucket directly from your known project_id
+          STATE_BUCKET="${PROJECT_ID}-tfstate-insight_agent"
 
-          if [ -z "$STATE_BUCKET" ]; then
-            echo "Error: state_bucket output is empty. Check if terraform output is defined."
-            exit 1
-          fi
-
-          # Write backend config with valid value
+          # Write backend config
           cat > backend.tf <<EOF
           terraform {
             backend "gcs" {
@@ -85,9 +79,12 @@ jobs:
           }
           EOF
 
-          # Re-init without conflicting flags
+          # Clean old local backend data
           rm -rf .terraform .terraform.lock.hcl
+
+          # Init and migrate state
           yes | terraform init -migrate-state
+
 
 
       # --- Phase 3: Deploy Infrastructure ---
