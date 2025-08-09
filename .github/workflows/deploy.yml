@@ -112,7 +112,7 @@ jobs:
 
           # Wait 2 minutes for APIs to fully activate
           echo "Waiting for APIs to activate..."
-          sleep 120
+          # sleep 120
 
           # 2. Import existing resources (if not already managed)
           RESOURCES=(
