@@ -103,47 +103,45 @@ jobs:
 
           cd infrastructure
 
-          # 1. First apply ONLY the required APIs (they're needed for other operations)
+          # 1. Initialize and enable APIs first
+          terraform init
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
             -target=google_project_service.required_apis
 
-          # 2. Import resources (only if not already in state)
-          if ! terraform state show google_storage_bucket.tf_state >/dev/null 2>&1; then
-            terraform import \
-              -var="project_id=$PROJECT_ID" \
-              google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
-          fi
+          # Wait 2 minutes for APIs to fully activate
+          echo "Waiting for APIs to activate..."
+          sleep 120
 
-          if ! terraform state show google_artifact_registry_repository.insight_agent >/dev/null 2>&1; then
-            terraform import \
-              -var="project_id=$PROJECT_ID" \
-              google_artifact_registry_repository.insight_agent \
-              projects/$PROJECT_ID/locations/$REGION/repositories/insight-agent
-          fi
+          # 2. Import existing resources (if not already managed)
+          RESOURCES=(
+            "google_storage_bucket.tf_state ${GCP_PROJECT_ID}-tfstate-insight_agent"
+            "google_artifact_registry_repository.insight_agent projects/${GCP_PROJECT_ID}/locations/us-central1/repositories/insight-agent"
+            "google_service_account.insight_agent projects/${GCP_PROJECT_ID}/serviceAccounts/insight-agent-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+          )
 
-          if ! terraform state show google_service_account.insight_agent >/dev/null 2>&1; then
-            terraform import \
-              -var="project_id=$PROJECT_ID" \
-              google_service_account.insight_agent \
-              projects/$PROJECT_ID/serviceAccounts/insight-agent-sa@$PROJECT_ID.iam.gserviceaccount.com
-          fi
+          for resource in "${RESOURCES[@]}"; do
+            if ! terraform state show ${resource%% *} >/dev/null 2>&1; then
+              terraform import -var="project_id=$GCP_PROJECT_ID" $resource
+            fi
+          done
 
-          # 3. Apply remaining infrastructure with -target to avoid bucket issues
+          # 3. Apply IAM permissions separately
+          terraform apply -auto-approve \
+            -var="project_id=$GCP_PROJECT_ID" \
+            -target=google_project_iam_member.cloud_run_roles
+
+          # 4. Deploy Cloud Run service
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
             -var="image_tag=init" \
-            -target=google_artifact_registry_repository.insight_agent \
-            -target=google_service_account.insight_agent \
-            -target=google_project_iam_member.cloud_run_roles \
             -target=google_cloud_run_service.insight_agent \
             -target=google_cloud_run_service_iam_member.public_access
 
-          # 4. Final full apply to sync all state
+          # 5. Final full apply to sync everything
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
             -var="image_tag=init"
-
 
 
 
