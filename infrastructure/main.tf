@@ -1,4 +1,5 @@
 # infrastructure/main.tf
+
 terraform {
   required_providers {
     google = {
@@ -6,12 +7,11 @@ terraform {
       version = "~> 4.0"
     }
   }
-
 }
 
 provider "google" {
-  project = var.project_id
-  region  = var.region
+  project     = var.project_id
+  region      = var.region
   credentials = file(var.credentials_file)
 }
 
@@ -30,9 +30,15 @@ resource "google_storage_bucket" "tf_state" {
 
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      name,
+      location,
+      storage_class,
+      uniform_bucket_level_access,
+      versioning
+    ]
   }
 }
-
 
 # ========================
 # 2. REQUIRED APIs
@@ -64,10 +70,13 @@ resource "google_artifact_registry_repository" "insight_agent" {
   }
 
   lifecycle {
+    prevent_destroy = true
     ignore_changes = [
+      repository_id,
       location,
       format,
-      description
+      description,
+      labels
     ]
   }
 
@@ -75,7 +84,6 @@ resource "google_artifact_registry_repository" "insight_agent" {
     google_project_service.required_apis
   ]
 }
-
 
 # ========================
 # 4. SERVICE ACCOUNT
@@ -85,28 +93,19 @@ resource "google_service_account" "insight_agent" {
   display_name = "Insight Agent Service Account"
   description  = "Identity for Cloud Run service"
 
+  lifecycle {
+    prevent_destroy = true
+    ignore_changes = [
+      account_id,
+      display_name,
+      description
+    ]
+  }
+
   depends_on = [
     google_project_service.required_apis
   ]
 }
-
-#resource "google_project_iam_member" "cloud_run_roles" {
-#  for_each = toset([
-#    "roles/artifactregistry.reader",
-#    "roles/logging.logWriter",
-#    "roles/monitoring.metricWriter"
-#  ])
-  
-#  project = var.project_id  # Explicitly set project
-#  role    = each.value
-#  member  = "serviceAccount:${google_service_account.insight_agent.email}"
-
-#  depends_on = [
-#    google_project_service.required_apis["iam.googleapis.com"],
-#    google_service_account.insight_agent
-#  ]
-#}
-
 
 # ========================
 # 5. CLOUD RUN SERVICE
@@ -114,7 +113,6 @@ resource "google_service_account" "insight_agent" {
 resource "google_cloud_run_service" "insight_agent" {
   name     = "insight-agent"
   location = var.region
-  
   
   template {
     spec {
@@ -141,8 +139,7 @@ resource "google_cloud_run_service" "insight_agent" {
   }
 
   depends_on = [
-    google_artifact_registry_repository.insight_agent,
-#    google_project_iam_member.cloud_run_roles
+    google_artifact_registry_repository.insight_agent
   ]
 }
 
