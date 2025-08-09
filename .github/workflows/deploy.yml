@@ -123,99 +123,99 @@ jobs:
             -var="image_tag=$GITHUB_SHA"
 
 
-      # --- Phase 3: Deploy Infrastructure ---
-      - name: Deploy Full Infrastructure
-        # env:
-        #   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-        #   GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
-        run: |
+      # # --- Phase 3: Deploy Infrastructure ---
+      # - name: Deploy Full Infrastructure
+      #   # env:
+      #   #   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      #   #   GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+      #   run: |
 
-          cd infrastructure
+      #     cd infrastructure
 
-          # 1. Initialize and enable APIs first
-          terraform init
-          terraform apply -auto-approve \
-            -var="project_id=$GCP_PROJECT_ID" \
-            -var="credentials_file=$HOME/key.json" \
-            -target=google_project_service.required_apis
+      #     # 1. Initialize and enable APIs first
+      #     terraform init
+      #     terraform apply -auto-approve \
+      #       -var="project_id=$GCP_PROJECT_ID" \
+      #       -var="credentials_file=$HOME/key.json" \
+      #       -target=google_project_service.required_apis
 
-          # Wait 2 minutes for APIs to fully activate
-          echo "Waiting for APIs to activate..."
-          # sleep 120
+      #     # Wait 2 minutes for APIs to fully activate
+      #     echo "Waiting for APIs to activate..."
+      #     # sleep 120
 
-          # 2. Import existing resources (if not already managed)
-          RESOURCES=(
-            "google_storage_bucket.tf_state ${GCP_PROJECT_ID}-tfstate-insight_agent"
-            "google_artifact_registry_repository.insight_agent projects/${GCP_PROJECT_ID}/locations/us-central1/repositories/insight-agent"
-            "google_service_account.insight_agent projects/${GCP_PROJECT_ID}/serviceAccounts/insight-agent-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
-          )
+      #     # 2. Import existing resources (if not already managed)
+      #     RESOURCES=(
+      #       "google_storage_bucket.tf_state ${GCP_PROJECT_ID}-tfstate-insight_agent"
+      #       "google_artifact_registry_repository.insight_agent projects/${GCP_PROJECT_ID}/locations/us-central1/repositories/insight-agent"
+      #       "google_service_account.insight_agent projects/${GCP_PROJECT_ID}/serviceAccounts/insight-agent-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+      #     )
 
-          for resource in "${RESOURCES[@]}"; do
-            if ! terraform state show ${resource%% *} >/dev/null 2>&1; then
-              terraform import -var="project_id=$GCP_PROJECT_ID" $resource
-            fi
-          done
+      #     for resource in "${RESOURCES[@]}"; do
+      #       if ! terraform state show ${resource%% *} >/dev/null 2>&1; then
+      #         terraform import -var="project_id=$GCP_PROJECT_ID" $resource
+      #       fi
+      #     done
 
-          # 3. Apply IAM permissions separately
-          terraform apply -auto-approve \
-            -var="project_id=$GCP_PROJECT_ID" \
-            -var="credentials_file=$HOME/key.json" \
-            -target=google_project_iam_member.cloud_run_roles
+      #     # 3. Apply IAM permissions separately
+      #     terraform apply -auto-approve \
+      #       -var="project_id=$GCP_PROJECT_ID" \
+      #       -var="credentials_file=$HOME/key.json" \
+      #       -target=google_project_iam_member.cloud_run_roles
           
 
-          # # 4. Deploy Cloud Run service
-          # terraform apply -auto-approve \
-          #   -var="project_id=$GCP_PROJECT_ID" \
-          #   -var="image_tag=init" \
-          #   -target=google_cloud_run_service.insight_agent \
-          #   -target=google_cloud_run_service_iam_member.public_access
+      #     # # 4. Deploy Cloud Run service
+      #     # terraform apply -auto-approve \
+      #     #   -var="project_id=$GCP_PROJECT_ID" \
+      #     #   -var="image_tag=init" \
+      #     #   -target=google_cloud_run_service.insight_agent \
+      #     #   -target=google_cloud_run_service_iam_member.public_access
           
 
-          # Ensure service account key file exists
-          echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
+      #     # Ensure service account key file exists
+      #     echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
 
-          # Authenticate gcloud (so Artifact Registry pushes work too)
-          gcloud auth activate-service-account --key-file="$HOME/key.json"
+      #     # Authenticate gcloud (so Artifact Registry pushes work too)
+      #     gcloud auth activate-service-account --key-file="$HOME/key.json"
 
-          # Set default project & region
-          # gcloud config set project "$GCP_PROJECT_ID"
-          gcloud config set run/region "us-central1"
+      #     # Set default project & region
+      #     # gcloud config set project "$GCP_PROJECT_ID"
+      #     gcloud config set run/region "us-central1"
 
-          # Export creds for Terraform provider
-          # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+      #     # Export creds for Terraform provider
+      #     # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
 
-          # echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
-          cat "$HOME/key.json" | jq . > /dev/null  # Validate JSON structure
-
-
+      #     # echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
+      #     cat "$HOME/key.json" | jq . > /dev/null  # Validate JSON structure
 
 
 
-                    # 4. Deploy Cloud Run service (with public access IAM binding)
-          echo "Deploying Cloud Run service and setting public access permissions..."
 
-          # Ensure credentials are available for Terraform (not just gcloud)
-          # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
 
+      #               # 4. Deploy Cloud Run service (with public access IAM binding)
+      #     echo "Deploying Cloud Run service and setting public access permissions..."
+
+      #     # Ensure credentials are available for Terraform (not just gcloud)
+      #     # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+
+      #     # terraform apply -auto-approve \
+      #     #   -var="project_id=$GCP_PROJECT_ID" \
+      #     #   -var="image_tag=init" \
+      #     #   -target=google_cloud_run_service.insight_agent \
+      #     #   -target=google_cloud_run_service_iam_member.public_access
+
+      #     terraform apply -auto-approve \
+      #     -var="project_id=$GCP_PROJECT_ID" \
+      #     -var="credentials_file=$HOME/key.json" \
+      #     -var="image_tag=init"
+
+
+      #     echo 'aFETR # 4. Deploy Cloud Run service'
+      #     echo '..........................'
+
+          # # 5. Final full apply to sync everything
           # terraform apply -auto-approve \
           #   -var="project_id=$GCP_PROJECT_ID" \
-          #   -var="image_tag=init" \
-          #   -target=google_cloud_run_service.insight_agent \
-          #   -target=google_cloud_run_service_iam_member.public_access
-
-          terraform apply -auto-approve \
-          -var="project_id=$GCP_PROJECT_ID" \
-          -var="credentials_file=$HOME/key.json" \
-          -var="image_tag=init"
-
-
-          echo 'aFETR # 4. Deploy Cloud Run service'
-          echo '..........................'
-
-          # 5. Final full apply to sync everything
-          terraform apply -auto-approve \
-            -var="project_id=$GCP_PROJECT_ID" \
-            -var="image_tag=init"
+          #   -var="image_tag=init"
 
 # ............................................
 
