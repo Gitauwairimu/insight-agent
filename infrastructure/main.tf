@@ -18,7 +18,7 @@ provider "google" {
 # 1. STATE STORAGE BUCKET
 # ========================
 resource "google_storage_bucket" "tf_state" {
-  name                        = "${var.project_id}-tfstate-${random_id.bucket_suffix.hex}"
+  name                        = "${var.project_id}-tfstate-insight_agent"
   location                    = var.region
   force_destroy               = false
   uniform_bucket_level_access = true
@@ -32,9 +32,6 @@ resource "google_storage_bucket" "tf_state" {
   }
 }
 
-resource "random_id" "bucket_suffix" {
-  byte_length = 4
-}
 
 # ========================
 # 2. REQUIRED APIs
