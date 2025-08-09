@@ -180,11 +180,15 @@ jobs:
           # Ensure credentials are available for Terraform (not just gcloud)
           # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
 
+          # terraform apply -auto-approve \
+          #   -var="project_id=$GCP_PROJECT_ID" \
+          #   -var="image_tag=init" \
+          #   -target=google_cloud_run_service.insight_agent \
+          #   -target=google_cloud_run_service_iam_member.public_access
+
           terraform apply -auto-approve \
-            -var="project_id=$GCP_PROJECT_ID" \
-            -var="image_tag=init" \
-            -target=google_cloud_run_service.insight_agent \
-            -target=google_cloud_run_service_iam_member.public_access
+          -var="project_id=$GCP_PROJECT_ID" \
+          -var="image_tag=init"
 
 
           echo 'aFETR # 4. Deploy Cloud Run service'
