@@ -39,6 +39,18 @@ jobs:
           cd infrastructure
           rm -rf .terraform .terraform.lock.hcl backend.tf
           terraform init
+      
+      # --- Phase 0: Ensure State Bucket Exists ---
+      - name: Ensure State Bucket Exists
+        run: |
+          STATE_BUCKET="${PROJECT_ID}-tfstate-insight_agent"
+          if ! gsutil ls -b gs://$STATE_BUCKET >/dev/null 2>&1; then
+            echo "Creating state bucket: $STATE_BUCKET"
+            gsutil mb -p $PROJECT_ID -l $REGION -b on gs://$STATE_BUCKET
+          else
+            echo "State bucket already exists."
+          fi
+
 
       # --- Phase 1: Create GCS Bucket for Remote State ---
       - name: Bootstrap Remote State
