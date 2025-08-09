@@ -100,9 +100,9 @@ jobs:
 
       # --- Phase 3: Deploy Infrastructure ---
       - name: Deploy Full Infrastructure
-        env:
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
+        # env:
+        #   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        #   GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
         run: |
 
           cd infrastructure
@@ -146,6 +146,20 @@ jobs:
           echo 'aFETR # 4. Deploy Cloud Run service'
           echo '..........................'
 
+
+
+      # --- Phase 4: Build and Push Container ---
+      - name: Authenticate Docker to Artifact Registry
+        run: |
+          gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+      - name: Build and Push Docker Image
+        run: |
+          cd app
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
+
+
           # 5. Final full apply to sync everything
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
@@ -181,17 +195,6 @@ jobs:
           # terraform apply -auto-approve \
           #   -var="project_id=$GCP_PROJECT_ID" \
           #   -var="image_tag=init"
-
-      # --- Phase 4: Build and Push Container ---
-      - name: Authenticate Docker to Artifact Registry
-        run: |
-          gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
-
-      - name: Build and Push Docker Image
-        run: |
-          cd app
-          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
-          docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
 
       # --- Phase 5: Redeploy Cloud Run with New Image ---
       - name: Deploy Cloud Run Service
