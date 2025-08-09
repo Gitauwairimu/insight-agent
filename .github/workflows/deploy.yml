@@ -111,6 +111,15 @@ jobs:
           cd app
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
+  
+  
+      # Deploy infrastructure
+      - name: New Deploy Infrastructure
+        run: |
+          cd infrastructure
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="image_tag=$GITHUB_SHA"
 
 
       # --- Phase 3: Deploy Infrastructure ---
