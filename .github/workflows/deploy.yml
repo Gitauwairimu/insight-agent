@@ -102,6 +102,8 @@ jobs:
         run: |
           cd infrastructure
 
+          terraform state rm google_storage_bucket.tf_state
+
           terraform import \
             -var="project_id=$PROJECT_ID" \
             google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
