@@ -105,8 +105,8 @@ jobs:
         run: |
           cd infrastructure
 
-          # 1. Initialize Terraform with backend
-          terraform init \
+          # 1. Initialize Terraform with backend (reconfigure to avoid backend change errors)
+          terraform init -reconfigure \
             -backend-config="bucket=${PROJECT_ID}-tfstate-insight_agent" \
             -backend-config="credentials=$HOME/key.json" \
             -backend-config="prefix=terraform/state"
@@ -129,6 +129,7 @@ jobs:
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
             -var="image_tag=$GITHUB_SHA"
+
 
 
       # # Deploy infrastructure (includes Cloud Run)
