@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "your-bootstrap-tf-state-bucket" # Set manually
+    bucket = "my-project-tfstate-insight_agent"
     prefix = "terraform/state"
   }
 }
