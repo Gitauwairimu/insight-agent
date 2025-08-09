@@ -83,16 +83,16 @@ resource "google_service_account" "insight_agent" {
 resource "google_project_iam_member" "cloud_run_roles" {
   for_each = toset([
     "roles/artifactregistry.reader",
-    "roles/logging.logWriter", 
+    "roles/logging.logWriter",
     "roles/monitoring.metricWriter"
   ])
   
-  project = var.project_id  # This was missing
+  project = var.project_id  # Explicitly set project
   role    = each.value
   member  = "serviceAccount:${google_service_account.insight_agent.email}"
 
   depends_on = [
-    google_project_service.required_apis,
+    google_project_service.required_apis["iam.googleapis.com"],
     google_service_account.insight_agent
   ]
 }
