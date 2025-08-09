@@ -146,12 +146,25 @@ jobs:
             -target=google_project_iam_member.cloud_run_roles
           
 
-          # 4. Deploy Cloud Run service
+          # # 4. Deploy Cloud Run service
+          # terraform apply -auto-approve \
+          #   -var="project_id=$GCP_PROJECT_ID" \
+          #   -var="image_tag=init" \
+          #   -target=google_cloud_run_service.insight_agent \
+          #   -target=google_cloud_run_service_iam_member.public_access
+          
+                    # 4. Deploy Cloud Run service (with public access IAM binding)
+          echo "Deploying Cloud Run service and setting public access permissions..."
+
+          # Ensure credentials are available for Terraform (not just gcloud)
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
             -var="image_tag=init" \
             -target=google_cloud_run_service.insight_agent \
             -target=google_cloud_run_service_iam_member.public_access
+
 
           echo 'aFETR # 4. Deploy Cloud Run service'
           echo '..........................'
