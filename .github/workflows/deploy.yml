@@ -86,8 +86,12 @@ jobs:
         run: |
           cd infrastructure
 
-          terraform import google_service_account.insight_agent \
-            projects/${GCP_PROJECT_ID}/serviceAccounts/insight-agent-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com
+          terraform import \
+          -var="project_id=$GCP_PROJECT_ID" \
+          -var="image_tag=init" \
+          google_service_account.insight_agent \
+          projects/${GCP_PROJECT_ID}/serviceAccounts/insight-agent-sa@${GCP_PROJECT_ID}.iam.gserviceaccount.com
+
 
 
           terraform apply -auto-approve \
