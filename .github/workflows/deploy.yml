@@ -101,38 +101,28 @@ jobs:
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
 
-         # Deploy infrastructure
+      # Deploy infrastructure
       - name: Deploy Infrastructure
         run: |
           cd infrastructure
           
-          # 1. Forcefully import all resources with empty state if needed
-          for resource in \
-            "google_storage_bucket.tf_state ${PROJECT_ID}-tfstate-insight_agent" \
-            "google_artifact_registry_repository.insight_agent projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" \
-            "google_service_account.insight_agent projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com"; do
-            
-            # Try normal import first
-            terraform import $resource 2>/dev/null || (
-              # If import fails, create empty state entry
-              terraform state rm ${resource%% *} 2>/dev/null || true
-              echo '{"version":4,"terraform_version":"1.6.6","serial":1,"lineage":"","outputs":{},"resources":[]}' > empty.tfstate
-              terraform state push -force empty.tfstate
-              terraform import $resource 2>/dev/null || true
-            )
-          done
-          
-          # 2. Apply only Cloud Run resources with strict targeting
+          terraform init -reconfigure
+
+          terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent" || true
+          terraform import google_artifact_registry_repository.insight_agent "projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" || true
+          terraform import google_service_account.insight_agent "projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com" || true
+
+          terraform plan \
+            -var="project_id=$PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
+            -var="image_tag=$GITHUB_SHA"
+
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
-            -var="image_tag=$GITHUB_SHA" \
-            -target=google_cloud_run_service.insight_agent \
-            -target=google_cloud_run_service_iam_member.public_access \
-            -refresh=false \
-            -lock=false \
-            -parallelism=1
-                     
+            -var="image_tag=$GITHUB_SHA"
+
+            
       # Verify deployment
       - name: Verify Deployment
         run: |
