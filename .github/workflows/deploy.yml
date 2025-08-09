@@ -155,6 +155,9 @@ jobs:
           
 
                     # Ensure service account key file exists
+          echo '.......................................................'
+          echo "$GCP_SA_KEY"
+          echo '.......................................................'
           echo "$GCP_SA_KEY" > "$HOME/key.json"
 
           # Authenticate gcloud (so Artifact Registry pushes work too)
@@ -174,7 +177,7 @@ jobs:
           echo "Deploying Cloud Run service and setting public access permissions..."
 
           # Ensure credentials are available for Terraform (not just gcloud)
-          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
+          # export GOOGLE_APPLICATION_CREDENTIALS="$HOME/key.json"
 
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
