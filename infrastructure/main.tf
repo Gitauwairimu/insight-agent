@@ -54,14 +54,15 @@ resource "google_project_service" "required_apis" {
 # 3. ARTIFACT REGISTRY
 # ========================
 resource "google_artifact_registry_repository" "insight_agent" {
-  repository_id = "insight-agent" 
-  location      = var.region      
-  format        = "DOCKER"        
+  repository_id = "insight-agent"
+  location      = var.region
+  format        = "DOCKER"
   description   = "Stores Insight Agent container images"
-  
+
   labels = {
     environment = "dev"
-  
+  }
+
   lifecycle {
     ignore_changes = [
       location,
@@ -70,11 +71,11 @@ resource "google_artifact_registry_repository" "insight_agent" {
     ]
   }
 
-
   depends_on = [
     google_project_service.required_apis
   ]
 }
+
 
 # ========================
 # 4. SERVICE ACCOUNT
