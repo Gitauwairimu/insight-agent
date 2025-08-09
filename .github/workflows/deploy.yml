@@ -106,18 +106,27 @@ jobs:
         run: |
           cd infrastructure
           
-          # First, import all existing resources with error suppression
-          terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent" 2>/dev/null || true
-          terraform import google_artifact_registry_repository.insight_agent "projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" 2>/dev/null || true
-          terraform import google_service_account.insight_agent "projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com" 2>/dev/null || true
+          # 1. First import all existing resources (ignore errors)
+          terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent" 2>/dev/null || echo "Bucket already imported"
+          terraform import google_artifact_registry_repository.insight_agent "projects/${PROJECT_ID}/locations/us-central1/repositories/insight-agent" 2>/dev/null || echo "Repository already imported"
+          terraform import google_service_account.insight_agent "projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com" 2>/dev/null || echo "Service account already imported"
           
-          # Then apply changes with -refresh=false to prevent recreation attempts
+          # 2. Refresh state to recognize imported resources
+          terraform refresh -var="project_id=$PROJECT_ID" -var="credentials_file=$HOME/key.json"
+          
+          # 3. Apply changes with explicit targets
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
             -var="image_tag=$GITHUB_SHA" \
-            -refresh=false \
-            -parallelism=1
+            -target=google_cloud_run_service.insight_agent \
+            -target=google_cloud_run_service_iam_member.public_access
+          
+          # 4. Final full apply to sync state
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
+            -var="image_tag=$GITHUB_SHA"
 
       # Verify deployment
       - name: Verify Deployment
