@@ -12,6 +12,7 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
+  use_oauth2 = true
 }
 
 # ========================
@@ -104,6 +105,7 @@ resource "google_service_account" "insight_agent" {
 resource "google_cloud_run_service" "insight_agent" {
   name     = "insight-agent"
   location = var.region
+  
   
   template {
     spec {
