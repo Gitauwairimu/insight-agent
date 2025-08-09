@@ -101,34 +101,33 @@ jobs:
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/insight-agent/insight-agent:$GITHUB_SHA
 
-      - name: Deploy Infrastructure (assume required resources already exist)
+      - name: Deploy Infrastructure
         run: |
           cd infrastructure
 
-          # 1. Initialize Terraform with backend (reconfigure to avoid backend change errors)
+          # Init with remote state
           terraform init -reconfigure \
             -backend-config="bucket=${PROJECT_ID}-tfstate-insight_agent" \
             -backend-config="credentials=$HOME/key.json" \
             -backend-config="prefix=terraform/state"
 
-          # 2. Import existing resources into state (safe to rerun)
-          terraform import \
-            google_storage_bucket.tf_state \
-            "${PROJECT_ID}-tfstate-insight_agent" || true
+          # Import only if missing from state
+          terraform state show google_storage_bucket.tf_state >/dev/null 2>&1 || \
+            terraform import google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
 
-          terraform import \
-            google_artifact_registry_repository.insight_agent \
-            projects/${PROJECT_ID}/locations/us-central1/repositories/insight_agent || true
+          terraform state show google_artifact_registry_repository.insight_agent >/dev/null 2>&1 || \
+            terraform import google_artifact_registry_repository.insight_agent \
+              projects/${PROJECT_ID}/locations/us-central1/repositories/insight_agent
 
-          terraform import \
-            google_service_account.insight_agent \
-            projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com || true
+          terraform state show google_service_account.insight_agent >/dev/null 2>&1 || \
+            terraform import google_service_account.insight_agent \
+              projects/${PROJECT_ID}/serviceAccounts/insight-agent-sa@${PROJECT_ID}.iam.gserviceaccount.com
 
-          # 3. Apply changes for the rest of the infrastructure
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
             -var="image_tag=$GITHUB_SHA"
+
 
 
 
