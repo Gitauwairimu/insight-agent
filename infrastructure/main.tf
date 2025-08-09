@@ -117,7 +117,8 @@ resource "google_cloud_run_service" "insight_agent" {
   template {
     spec {
       containers {
-        image = "${var.region}-docker.pkg.dev/${var.project_id}/insight-agent/insight-agent:${var.image_tag}"
+        image = "us-central1-docker.pkg.dev/${var.project_id}/insight-agent/insight-agent:${var.image_tag}"
+        #image = "${var.region}-docker.pkg.dev/${var.project_id}/insight-agent/insight-agent:${var.image_tag}"
         ports {
           container_port = 8080
         }
