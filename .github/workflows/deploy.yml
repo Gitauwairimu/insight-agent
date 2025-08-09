@@ -105,12 +105,23 @@ jobs:
       - name: Deploy Infrastructure
         run: |
           cd infrastructure
+          
+          # First apply only the resources that might need to be created
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
+            -var="image_tag=$GITHUB_SHA" \
+            -target=google_cloud_run_service.insight_agent \
+            -target=google_cloud_run_service_iam_member.public_access \
+            -refresh=false
+          
+          # Then do a full apply to sync state
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
             -var="image_tag=$GITHUB_SHA" \
             -refresh=false
-            
+
       # Verify deployment
       - name: Verify Deployment
         run: |
