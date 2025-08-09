@@ -44,10 +44,14 @@ jobs:
       - name: Bootstrap Remote State
         run: |
           cd infrastructure
-          
-          terraform import \
-            -var="project_id=$PROJECT_ID" \
-            google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
+
+          if ! gcloud storage buckets describe "${PROJECT_ID}-tfstate-insight_agent" --project "$PROJECT_ID" >/dev/null 2>&1; then
+            terraform apply -auto-approve \
+              -target=google_storage_bucket.tf_state \
+              -target=google_project_service.required_apis \
+              -var="project_id=$PROJECT_ID"
+          fi
+
 
           terraform apply -auto-approve \
             -target=google_storage_bucket.tf_state \
