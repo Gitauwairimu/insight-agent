@@ -12,7 +12,6 @@ terraform {
 provider "google" {
   project = var.project_id
   region  = var.region
-  use_oauth2 = true
 }
 
 # ========================
