@@ -156,9 +156,9 @@ jobs:
 
                     # Ensure service account key file exists
           echo '.......................................................'
-          echo "$GCP_SA_KEY"
+          echo "$GOOGLE_CREDENTIALS"
           echo '.......................................................'
-          echo "$GCP_SA_KEY" > "$HOME/key.json"
+          echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
 
           # Authenticate gcloud (so Artifact Registry pushes work too)
           gcloud auth activate-service-account --key-file="$HOME/key.json"
