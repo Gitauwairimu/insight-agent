@@ -126,6 +126,7 @@ jobs:
           terraform init
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
             -target=google_project_service.required_apis
 
           # Wait 2 minutes for APIs to fully activate
@@ -148,6 +149,7 @@ jobs:
           # 3. Apply IAM permissions separately
           terraform apply -auto-approve \
             -var="project_id=$GCP_PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
             -target=google_project_iam_member.cloud_run_roles
           
 
@@ -193,6 +195,7 @@ jobs:
 
           terraform apply -auto-approve \
           -var="project_id=$GCP_PROJECT_ID" \
+          -var="credentials_file=$HOME/key.json" \
           -var="image_tag=init"
 
 
