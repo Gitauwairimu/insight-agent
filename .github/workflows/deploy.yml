@@ -255,6 +255,7 @@ jobs:
           cd infrastructure
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
             -var="image_tag=$GITHUB_SHA"
 
       # --- Phase 6: Verify Deployment ---
