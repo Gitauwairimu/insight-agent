@@ -93,6 +93,8 @@ credentials_file = "/path/to/your/service-account-key.json"
 image_tag        = "latest"
 
 
+---
+
 ### 4. Initialize and Apply Terraform
 
 
