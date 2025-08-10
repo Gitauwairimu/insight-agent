@@ -158,6 +158,39 @@ Terraform requires the following variables set in infrastructure/variables.tf:
 region           = "us-central1"
 
 ```
+Trigger the workflow by pushing the changes to git on main branch.
+
+## Usage and Testing
+
+Once the Insight Agent service is deployed on Cloud Run, a Url is generated, follow these steps to use and test it:
+
+---
+
+### Usage
+
+- The service exposes a REST API endpoint at:
+
+```hcl
+https://<your-cloud-run-url>/analyze
+
+```
+
+- To analyze text, send a POST request with JSON payload:
+
+
+```json
+{
+  "text": "Your text to analyze here"
+}
+
+```
+Example using curl
+
+```hcl
+curl -X POST https://<your-cloud-run-url>/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Hello Insight Agent!"}'
+```
 
 ## Design Decisions
 
