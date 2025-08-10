@@ -85,7 +85,8 @@ Terraform requires the following variables:
 
 You can provide these as command-line variables or create a `terraform.tfvars` file with:
 
-```hcl
+
+
 project_id       = "your-project-id"
 region           = "us-central1"
 credentials_file = "/path/to/your/service-account-key.json"
