@@ -58,104 +58,110 @@ Follow these steps to set up the project and deploy it on your Google Cloud Plat
 
 - Google Cloud Project with billing enabled
 - Owner permissions on the GCP project
-- Docker installed locally (for development)
 - Terraform v1.6.6+
 - gcloud CLI configured with credentials
 
 ## Setup Instructions
 
 ### 1. First-Time Deployment
+
+## Setup and Deployment Instructions On Google Cloud
+
+Follow these steps to set up the necessary credentials and deploy the Insight Agent project from scratch on Google Cloud, **without committing any secrets to the repository**.
+
+---
+
+### 1. Create a Google Cloud Project (if you don’t have one)
+
+- Go to [Google Cloud Console](https://console.cloud.google.com/).
+- Create a new project or select an existing one.
+- Ensure billing is enabled for the project.
+
+---
+
+### 2. Enable Required Google Cloud APIs
+
+Enable the following APIs in your project (via Console > APIs & Services > Library):
+
+- Cloud Run API
+- Artifact Registry API
+- Cloud Storage API
+- Cloud Build API
+- IAM API
+- Service Usage API
+
+---
+
+### 3. Create a Service Account with Required Permissions
+
+1. Navigate to **IAM & Admin > Service Accounts** in the Cloud Console.
+2. Click **Create Service Account** and name it (e.g., `insight-agent-deployer`).
+3. Grant the following roles to the service account:
+   - `roles/run.admin`
+   - `roles/storage.admin`
+   - `roles/artifactregistry.admin`
+   - `roles/cloudbuild.builds.editor`
+   - `roles/iam.serviceAccountUser`
+   - `roles/iam.serviceAccountAdmin`
+   - `roles/serviceusage.apiKeysViewer`
+   - `roles/serviceusage.serviceUsageAdmin`
+4. Click **Done** to create the account.
+
+---
+
+### 4. Create and Download Service Account Key
+
+1. In the Service Accounts list, click on your newly created account.
+2. Go to the **Keys** tab.
+3. Click **Add Key > Create New Key**.
+4. Choose **JSON** format and click **Create**.
+5. Save the downloaded JSON file securely.  
+   **Do not commit this file to source control.**
+
+---
+
+### 5. Store Secrets Securely (For Cloud-Based CI/CD)
+
+- If you plan to use GitHub Actions or another CI/CD system, upload the following secrets to your repository’s secret storage (e.g., GitHub Secrets):
+  - `GCP_PROJECT_ID`: Your Google Cloud project ID.
+  - `GCP_SA_KEY`: Contents of the JSON key file (copy-paste entire JSON).
+
+---
+
+### 6. Set Environment Variables or Configure Access on Cloud Shell (Optional)
+
+If you prefer to deploy manually or from Cloud Shell:
+
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/insight-agent.git
+git clone https://github.com/Gitauwairimu/insight-agent.git
 cd insight-agent
 
-# Initialize infrastructure
-cd infrastructure
-terraform init
+- Set the environment variables in - insight-agent/.github/workflows/deploy.yml:
 
-# Deploy with GitHub Actions
-# (Configure secrets in GitHub first)
+REGION: us-central1   (or region of your choice)
+PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
-- A Google Cloud service account with the following permissions:
-  - `roles/run.admin`
-  - `roles/storage.admin`
-  - `roles/artifactregistry.admin`
-  - `roles/cloudbuild.builds.editor`
-  - `roles/iam.serviceAccountUser`
-  - `roles/iam.serviceAccountAdmin`
-  - `roles/serviceusage.apiKeysViewer`
-  - `roles/serviceusage.serviceUsageAdmin`
 
-### 1. Create a Service Account and Download Credentials
 
-1. In the [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts), create a new service account (e.g., `insight-agent-deployer`).
-2. Assign the required roles listed above to this service account.
-3. Generate a JSON key for this service account and download it.  
-4. **Important:** Do **not** commit this key to your repository.
-
-### 2. Store Secrets Securely
-
-- If using GitHub Actions, add the following secrets in your repository settings under **Settings > Secrets and variables > Actions**:
-  - `GCP_PROJECT_ID`: Your Google Cloud project ID.
-  - `GCP_SA_KEY`: The entire JSON content of your service account key file.
-
-- Locally, you can set environment variables or provide a path to your key file for Terraform and gcloud authentication.
 
 ### 3. Configure Terraform Variables
 
-Terraform requires the following variables:
+Terraform requires the following variables set in variables.tf:
 
 - `project_id`: Your GCP project ID.
 - `region`: GCP region to deploy resources (e.g., `us-central1`).
 - `credentials_file`: Path to your downloaded service account JSON key.
 - `image_tag`: Docker image tag (usually the commit SHA or `latest`).
 
-You can provide these as command-line variables or create a `terraform.tfvars` file with:
+You can provide these in infrastructure/variables.tf with:
 
 
 ```hcl
-project_id       = "your-project-id"
 region           = "us-central1"
-credentials_file = "/path/to/your/service-account-key.json"
-image_tag        = "latest"
 
 ```
-
-### 4. Initialize and Apply Terraform
-
-```hcl
-cd infrastructure
-terraform init
-terraform apply -auto-approve \
-  -var="project_id=your-project-id" \
-  -var="region=us-central1" \
-  -var="credentials_file=/path/to/service-account-key.json" \
-  -var="image_tag=latest"
-```
-
-### 5. Build and Push Docker Image
-
-```hcl
-cd app
-docker build -t us-central1-docker.pkg.dev/your-project-id/insight-agent/insight-agent:latest .
-docker push us-central1-docker.pkg.dev/your-project-id/insight-agent/insight-agent:latest
-```
-
-### 6. Deploy Cloud Run Service
-
-Run Terraform apply again to deploy the Cloud Run service using the newly pushed Docker image:
-
-```hcl
-cd infrastructure
-terraform apply -auto-approve \
-  -var="project_id=your-project-id" \
-  -var="region=us-central1" \
-  -var="credentials_file=/path/to/service-account-key.json" \
-  -var="image_tag=latest"
-```
-
-
 
 ## Design Decisions
 
