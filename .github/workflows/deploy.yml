@@ -143,13 +143,13 @@ jobs:
             -d '{"text":"Testing deployment"}' | jq .
 
 
-      # Destroy all Terraform resources (cleanup)
-      - name: Destroy Terraform Resources
-        if: always()   # Run even if previous steps fail
-        run: |
-          cd infrastructure
-          echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
-          terraform destroy -auto-approve \
-            -var="project_id=$PROJECT_ID" \
-            -var="credentials_file=$HOME/key.json" \
-            -var="image_tag=$GITHUB_SHA"
+      # # Destroy all Terraform resources (cleanup)
+      # - name: Destroy Terraform Resources
+      #   if: always()   # Run even if previous steps fail
+      #   run: |
+      #     cd infrastructure
+      #     echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
+      #     terraform destroy -auto-approve \
+      #       -var="project_id=$PROJECT_ID" \
+      #       -var="credentials_file=$HOME/key.json" \
+      #       -var="image_tag=$GITHUB_SHA"
