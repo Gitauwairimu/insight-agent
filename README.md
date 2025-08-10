@@ -136,13 +136,17 @@ If you prefer to deploy manually or from Cloud Shell:
 # Clone repository
 git clone https://github.com/Gitauwairimu/insight-agent.git
 cd insight-agent
+```
 
 - Set the environment variables in - insight-agent/.github/workflows/deploy.yml:
 
+
+```hcl
 REGION: us-central1   (or region of your choice)
 PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
 GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
+```
 
 
 
