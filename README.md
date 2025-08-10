@@ -154,3 +154,23 @@ terraform apply -auto-approve \
   -var="credentials_file=/path/to/service-account-key.json" \
   -var="image_tag=latest"
 ```
+
+
+
+## Design Decisions
+
+### Why Cloud Run?
+
+- **Serverless and Fully Managed:** Cloud Run abstracts away infrastructure management, letting you focus solely on your application code.
+- **Scalability:** It automatically scales based on incoming traffic, handling spikes without manual intervention.
+- **Cost Efficiency:** You pay only for the compute time your container uses, reducing idle resource costs.
+- **Simple Deployment:** Integrates seamlessly with container registries and CI/CD pipelines like GitHub Actions.
+- **Supports Standard Containers:** No vendor lock-in with proprietary runtime — any container image works.
+
+### Security Management
+
+- **Service Account with Least Privilege:** A dedicated service account is created with only necessary IAM roles, limiting access to required resources.
+- **IAM Role Assignments:** Roles like `roles/run.invoker` are granted to `allUsers` only when public access is needed, otherwise access is tightly controlled.
+- **Terraform Lifecycle Management:** Resources like storage buckets and service accounts use `prevent_destroy` and `ignore_changes` to avoid accidental deletions or modifications.
+- **Secrets Management:** Sensitive credentials (e.g., service account keys) are kept out of the codebase and stored securely as GitHub Actions secrets or local environment variables.
+- **Remote State Storage:** Terraform state is stored securely in a Google Cloud Storage bucket with versioning and access control, ensuring state integrity and collaboration safety.
