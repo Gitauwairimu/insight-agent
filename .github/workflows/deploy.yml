@@ -108,6 +108,17 @@ jobs:
       # Authenticate Docker for Artifact Registry
       - name: Authenticate Docker
         run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+      
+            # Ensure Artifact Registry exists before pushing images
+      - name: Setup Artifact Registry
+        run: |
+          cd infrastructure
+          # Create only the Artifact Registry repository
+          terraform apply -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
+            -var="image_tag=init" \
+            -target=google_artifact_registry_repository.insight_agent
 
       # Build & Push Docker image
       - name: Build and Push Docker Image
