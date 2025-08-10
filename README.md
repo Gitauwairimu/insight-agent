@@ -174,3 +174,62 @@ terraform apply -auto-approve \
 - **Terraform Lifecycle Management:** Resources like storage buckets and service accounts use `prevent_destroy` and `ignore_changes` to avoid accidental deletions or modifications.
 - **Secrets Management:** Sensitive credentials (e.g., service account keys) are kept out of the codebase and stored securely as GitHub Actions secrets or local environment variables.
 - **Remote State Storage:** Terraform state is stored securely in a Google Cloud Storage bucket with versioning and access control, ensuring state integrity and collaboration safety.
+
+
+
+
+## How The CI/CD Pipeline Work
+
+The CI/CD pipeline automates the build, deployment, and verification of the Insight Agent application to Google Cloud Run, ensuring consistent and repeatable releases.
+
+### Workflow Trigger
+
+- The pipeline is triggered on every push to the `main` branch of the repository.
+
+### Key Steps in the Pipeline
+
+1. **Checkout Code**
+   - The latest code is checked out from the repository using `actions/checkout`.
+
+2. **Authenticate to Google Cloud**
+   - Uses the `google-github-actions/auth` action to authenticate with GCP using a service account key stored securely in GitHub Secrets.
+
+3. **Set Up Google Cloud SDK (gcloud)**
+   - Installs and configures the `gcloud` CLI for further Google Cloud operations.
+
+4. **Set Up Terraform**
+   - Installs Terraform (version 1.6.6) for infrastructure provisioning.
+
+5. **Terraform Initialization**
+   - Cleans any previous Terraform local state files and initializes Terraform in the `infrastructure` directory.
+
+6. **Ensure Terraform Remote State Bucket Exists**
+   - Checks if the Google Cloud Storage bucket for Terraform remote state exists; creates it if missing.
+
+7. **Bootstrap Remote State**
+   - Imports existing Terraform-managed resources into the state if they aren’t tracked yet.
+   - Applies initial Terraform changes to enable required APIs and provision the remote state bucket.
+
+8. **Configure Remote Backend**
+   - Configures Terraform to use the remote state bucket, migrating local state if necessary.
+
+9. **Authenticate Docker for Artifact Registry**
+   - Configures Docker authentication to push container images to Google Artifact Registry.
+
+10. **Build & Push Docker Image**
+    - Builds the Insight Agent Docker container tagged with the GitHub commit SHA.
+    - Pushes the image to Artifact Registry.
+
+11. **Deploy Infrastructure with Terraform**
+    - Writes service account credentials locally.
+    - Imports existing cloud resources to Terraform state to avoid duplication errors.
+    - Runs `terraform plan` for preview and then `terraform apply` to create/update resources.
+    - Deploys the Cloud Run service referencing the newly pushed container image.
+
+12. **Verify Deployment**
+    - Fetches the deployed Cloud Run service URL from Terraform outputs.
+    - Sends a test HTTP request to verify the service is responding correctly.
+
+---
+
+This pipeline ensures infrastructure and application code are deployed together reliably, minimizing manual intervention and improving deployment speed and consistency.
