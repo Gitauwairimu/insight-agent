@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-This solution deploys a containerized application to Google Cloud Run with supporting GCP services. The final Docker image is optimized for size at just **52.6 MB**, enabling fast deployment and cold starts.
+This solution deploys a containerized application to Google Cloud Run with supporting GCP services. The final Docker image is optimized for size at just below **60.0 MB**, enabling fast deployment and cold starts.
 
 ┌───────────────────────────────────────────────────────────────┐
 │ GCP Project │
