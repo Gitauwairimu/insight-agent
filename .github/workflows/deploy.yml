@@ -8,8 +8,8 @@ env:
   REGION: us-central1
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
-e
-jobvs:
+
+jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
@@ -36,6 +36,26 @@ jobvs:
         with:
           terraform_version: 1.6.6
           terraform_wrapper: false
+      
+
+      # --- New step: Lint Python code ---
+      - name: Lint Python code
+        run: |
+          cd app
+          python3 -m pip install flake8
+          flake8 .
+
+      # --- Lint Terraform code ---
+      - name: Lint Terraform code
+        run: |
+          cd infrastructure
+          terraform fmt -check
+      
+      - name: Lint Python code
+        run: |
+          cd app
+          python3 -m pip install flake8
+          flake8 .
 
       # Clean Terraform local state & init
       - name: Terraform Init
