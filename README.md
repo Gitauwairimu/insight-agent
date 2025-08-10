@@ -192,6 +192,17 @@ curl -X POST https://<your-cloud-run-url>/analyze \
   -d '{"text":"Hello Insight Agent!"}'
 ```
 
+Expected Response if Successiful
+
+```hcl
+{
+  "original_text": "Testing deployment",
+  "word_count": 2,
+  "character_count": 18
+}
+
+```
+
 ## Design Decisions
 
 ### Why Cloud Run?
