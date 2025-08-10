@@ -138,11 +138,11 @@ git clone https://github.com/Gitauwairimu/insight-agent.git
 cd insight-agent
 ```
 
-- Set the environment variables in - insight-agent/.github/workflows/deploy.yml:
+- Ensure the environment variables in - insight-agent/.github/workflows/deploy.yml:
+- AQs set in the repository’s secret storage variables
 
 
 ```hcl
-REGION: us-central1   (or region of your choice)
 PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
 GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
@@ -152,15 +152,7 @@ GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
 ### 3. Configure Terraform Variables
 
-Terraform requires the following variables set in variables.tf:
-
-- `project_id`: Your GCP project ID.
-- `region`: GCP region to deploy resources (e.g., `us-central1`).
-- `credentials_file`: Path to your downloaded service account JSON key.
-- `image_tag`: Docker image tag (usually the commit SHA or `latest`).
-
-You can provide these in infrastructure/variables.tf with:
-
+Terraform requires the following variables set in infrastructure/variables.tf:
 
 ```hcl
 region           = "us-central1"
