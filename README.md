@@ -54,18 +54,29 @@ This setup allows for a scalable, serverless deployment of the Insight Agent wit
 
 Follow these steps to set up the project and deploy it on your Google Cloud Platform (GCP) account.
 
-### Prerequisites
+## Prerequisites
 
-- A Google Cloud Platform project with billing enabled.
-- The following GCP APIs enabled in your project:
-  - Cloud Run API
-  - Artifact Registry API
-  - Cloud Storage API
-  - Cloud Build API
-  - IAM API
-  - Service Usage API
-- [Terraform](https://www.terraform.io/downloads) installed locally (version 1.6.6 or later recommended).
-- [Docker](https://docs.docker.com/get-docker/) installed locally.
+- Google Cloud Project with billing enabled
+- Owner permissions on the GCP project
+- Docker installed locally (for development)
+- Terraform v1.6.6+
+- gcloud CLI configured with credentials
+
+## Setup Instructions
+
+### 1. First-Time Deployment
+```bash
+# Clone repository
+git clone https://github.com/your-repo/insight-agent.git
+cd insight-agent
+
+# Initialize infrastructure
+cd infrastructure
+terraform init
+
+# Deploy with GitHub Actions
+# (Configure secrets in GitHub first)
+
 - A Google Cloud service account with the following permissions:
   - `roles/run.admin`
   - `roles/storage.admin`
