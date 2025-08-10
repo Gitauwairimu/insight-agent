@@ -152,7 +152,7 @@ GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
 ### 3. Configure Terraform Variables
 
-Terraform requires the following variables set in infrastructure/variables.tf:
+Terraform requires the following variables set with region of your choice in infrastructure/variables.tf:
 
 ```hcl
 region           = "us-central1"
