@@ -141,3 +141,15 @@ jobs:
           SERVICE_URL=$(cd infrastructure && terraform output -raw cloud_run_url)
           curl -s $SERVICE_URL/analyze -H "Content-Type: application/json" \
             -d '{"text":"Testing deployment"}' | jq .
+
+
+      # Destroy all Terraform resources (cleanup)
+      - name: Destroy Terraform Resources
+        if: always()   # Run even if previous steps fail
+        run: |
+          cd infrastructure
+          echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
+          terraform destroy -auto-approve \
+            -var="project_id=$PROJECT_ID" \
+            -var="credentials_file=$HOME/key.json" \
+            -var="image_tag=$GITHUB_SHA"
