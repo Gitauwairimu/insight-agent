@@ -139,7 +139,7 @@ cd insight-agent
 ```
 
 - Ensure the environment variables in - insight-agent/.github/workflows/deploy.yml:
-- AQs set in the repository’s secret storage variables
+- As set in the repository’s secret storage variables
 
 
 ```hcl
