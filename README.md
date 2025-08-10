@@ -86,7 +86,7 @@ Terraform requires the following variables:
 You can provide these as command-line variables or create a `terraform.tfvars` file with:
 
 
-
+```hcl
 project_id       = "your-project-id"
 region           = "us-central1"
 credentials_file = "/path/to/your/service-account-key.json"
@@ -95,6 +95,7 @@ image_tag        = "latest"
 
 ### 4. Initialize and Apply Terraform
 
+```hcl
 cd infrastructure
 terraform init
 terraform apply -auto-approve \
@@ -105,6 +106,7 @@ terraform apply -auto-approve \
 
 ### 5. Build and Push Docker Image
 
+```hcl
 cd app
 docker build -t us-central1-docker.pkg.dev/your-project-id/insight-agent/insight-agent:latest .
 docker push us-central1-docker.pkg.dev/your-project-id/insight-agent/insight-agent:latest
@@ -113,6 +115,7 @@ docker push us-central1-docker.pkg.dev/your-project-id/insight-agent/insight-age
 
 Run Terraform apply again to deploy the Cloud Run service using the newly pushed Docker image:
 
+```hcl
 cd infrastructure
 terraform apply -auto-approve \
   -var="project_id=your-project-id" \
