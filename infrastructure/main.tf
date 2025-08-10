@@ -23,7 +23,7 @@ resource "google_storage_bucket" "tf_state" {
   location                    = var.region
   force_destroy               = false
   uniform_bucket_level_access = true
-  
+
   versioning {
     enabled = true
   }
@@ -113,7 +113,7 @@ resource "google_service_account" "insight_agent" {
 resource "google_cloud_run_service" "insight_agent" {
   name     = "insight-agent"
   location = var.region
-  
+
   template {
     spec {
       containers {
@@ -130,7 +130,7 @@ resource "google_cloud_run_service" "insight_agent" {
         }
       }
       service_account_name = google_service_account.insight_agent.email
-      timeout_seconds     = 300
+      timeout_seconds      = 300
     }
   }
 
