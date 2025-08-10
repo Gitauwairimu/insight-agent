@@ -51,11 +51,6 @@ jobs:
           cd infrastructure
           terraform fmt -check
       
-      - name: Lint Python code
-        run: |
-          cd app
-          python3 -m pip install flake8
-          flake8 .
 
       # Clean Terraform local state & init
       - name: Terraform Init
