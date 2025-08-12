@@ -280,6 +280,38 @@ The CI/CD pipeline automates the build, deployment, and verification of the Insi
     - Fetches the deployed Cloud Run service URL from Terraform outputs.
     - Sends a test HTTP request to verify the service is responding correctly.
 
+13. **Cleanup (Important: Avoid Unnecessary Costs)**
+
+When you're finished testing, **delete all resources** to prevent ongoing charges to your Google Cloud account. Run:
+
+```bash
+cd infrastructure
+terraform destroy -auto-approve \
+  -var="project_id=$PROJECT_ID" \
+  -var="credentials_file=$HOME/key.json"
+```
+Resources That Incur Costs:
+
+    Cloud Run Service: Charges for request processing time and memory
+
+    Artifact Registry: Storage costs for Docker images
+
+    Cloud Storage Bucket: Minimal storage fees for Terraform state
+
+    Network Egress: If your service receives significant traffic
+
+Additional Cleanup Steps:
+
+    Manually delete any remaining objects in the Terraform state bucket
+
+    Disable the APIs if you won't use them elsewhere:
+```bash
+    gcloud services disable \
+      run.googleapis.com \
+      artifactregistry.googleapis.com \
+      storage.googleapis.com
+```
+💡 Tip: Set a billing alert in Google Cloud Console to monitor costs.
 ---
 
 This pipeline ensures infrastructure and application code are deployed together reliably, minimizing manual intervention and improving deployment speed and consistency.
