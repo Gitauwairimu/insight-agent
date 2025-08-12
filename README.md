@@ -91,6 +91,12 @@ Enable the following APIs in your project (via Console > APIs & Services > Libra
 - IAM API
 - Service Usage API
 
+> ⚠️ **Permission Errors?**  
+> If you encounter `PERMISSION_DENIED` errors during deployment:  
+> 1. Double-check that **all required APIs are enabled** in your project.  
+> 2. Ensure your service account has the [required IAM roles](#3-create-a-service-account-with-required-permissions).  
+> 3. APIs can take a few minutes to propagate—wait and retry if needed.  
+
 ---
 
 ### 3. Create a Service Account with Required Permissions
