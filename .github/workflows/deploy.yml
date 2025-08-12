@@ -1,22 +1,27 @@
+# Name the workflow
 name: Deploy to Cloud Run
 
 on:
   push:
+  # Ensure only on main does it trigger the workflow
     branches: [ main ]
 
+# Define project variables
 env:
   REGION: us-central1
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
-jobfs:
+jobs:
   deploy:
+  # define runtime and permisions
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
       id-token: 'write'
 
     steps:
+      # Fetch code
       - uses: actions/checkout@v3
 
       # Authenticate with Google Cloud
@@ -25,12 +30,13 @@ jobfs:
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
+      # Set project on Google Cloud
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      # Set up Terraform
+      # Set up Terraform with specific version
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
@@ -38,14 +44,14 @@ jobfs:
           terraform_wrapper: false
       
 
-      # --- New step: Lint Python code ---
+      # Lint Python code - petty issues like spacing, jokes on this one
       - name: Lint Python code
         run: |
           cd app
           python3 -m pip install flake8
           flake8 .
 
-      # --- Lint Terraform code ---
+      #  Lint Terraform code - alerts on syntax issues
       - name: Lint Terraform code
         run: |
           cd infrastructure
@@ -76,20 +82,23 @@ jobfs:
           cd infrastructure
           echo "$GOOGLE_CREDENTIALS" > "$HOME/key.json"
 
+          # Checks if the Terraform state already contains the storage bucket resource and conditionally imports it
           if ! terraform state list | grep -q google_storage_bucket.tf_state; then
             terraform import \
               -var="credentials_file=$HOME/key.json" \
               -var="project_id=$PROJECT_ID" \
               google_storage_bucket.tf_state "${PROJECT_ID}-tfstate-insight_agent"
           fi
-
+          
+          
+          # Only runs if the bucket wasn't found in the state
           terraform apply -auto-approve \
             -var="project_id=$PROJECT_ID" \
             -var="credentials_file=$HOME/key.json" \
             -target=google_storage_bucket.tf_state \
             -target=google_project_service.required_apis
 
-      # Switch to remote backend
+      # Switch to remote backend. Creates (or overwrites) a backend.tf file with the GCS backend configuration
       - name: Configure Remote Backend
         run: |
           cd infrastructure
@@ -109,7 +118,7 @@ jobfs:
       - name: Authenticate Docker
         run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
       
-            # Ensure Artifact Registry exists before pushing images
+            # Ensure Artifact Registry exists before pushing images. Thanks idempotency
       - name: Setup Artifact Registry
         run: |
           cd infrastructure
@@ -120,7 +129,7 @@ jobfs:
             -var="image_tag=init" \
             -target=google_artifact_registry_repository.insight_agent
 
-      # Build & Push Docker image
+      # Build & Push Docker image to above defined registry
       - name: Build and Push Docker Image
         run: |
           cd app
@@ -146,7 +155,7 @@ jobfs:
 
 
             
-      # Verify deployment
+      # Verify deployment and call the endpoint for analysis
       - name: Verify Deployment
         run: |
           SERVICE_URL=$(cd infrastructure && terraform output -raw cloud_run_url)
