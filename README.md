@@ -20,18 +20,6 @@ This solution deploys a containerized application to Google Cloud Run with suppo
 │ └───────────┘ │
 └───────────────────────────────────────────────────────────────┘
 
-+------------------------------------------------+
-|          GCP PROJECT (Terraform)               |
-+----------------+----------------+---------------+
-| Artifact Reg.  |   Cloud Run    |  IAM SA       |
-| (Docker repo)  |  (insight-svc) | (insight-sa)  |
-+--------+-------+--------+-------+-------+-------+
-         |                |               |
-         |                |               |
-+--------v----------------v---------------+-------+
-|              Cloud Storage                     |
-|          (TF State Bucket)                    |
-+------------------------------------------------+
 This project deploys a containerized **Insight Agent** application on Google Cloud Platform (GCP) using **Cloud Run**. Infrastructure is provisioned and managed with **Terraform** for repeatability and automation.
 
 ### GCP Services Used
