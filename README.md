@@ -107,11 +107,8 @@ Enable the following APIs in your project (via Console > APIs & Services > Libra
    - `roles/run.admin`
    - `roles/storage.admin`
    - `roles/artifactregistry.admin`
-   - `roles/cloudbuild.builds.editor`
-   - `roles/iam.serviceAccountUser`
    - `roles/iam.serviceAccountAdmin`
-   - `roles/serviceusage.apiKeysViewer`
-   - `roles/serviceusage.serviceUsageAdmin`
+   - `roles/serviceusage.consumer`
 4. Click **Done** to create the account.
 
 ---
