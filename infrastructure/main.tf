@@ -1,5 +1,4 @@
-# infrastructure/main.tf
-
+# Specifies that Terraform should use the Google Cloud provider
 terraform {
   required_providers {
     google = {
@@ -9,15 +8,14 @@ terraform {
   }
 }
 
+# Configure authentication
 provider "google" {
   project     = var.project_id
   region      = var.region
   credentials = file(var.credentials_file)
 }
 
-# ========================
-# 1. STATE STORAGE BUCKET
-# ========================
+# Create a versioned GCS bucket to store Terraform state files, Blocks accidental deletion
 resource "google_storage_bucket" "tf_state" {
   name                        = "${var.project_id}-tfstate-insight_agent"
   location                    = var.region
@@ -40,9 +38,7 @@ resource "google_storage_bucket" "tf_state" {
   }
 }
 
-# ========================
-# 2. REQUIRED APIs
-# ========================
+# Enables Google Cloud APIs required for the infrastructure
 resource "google_project_service" "required_apis" {
   for_each = toset([
     "storage.googleapis.com",
@@ -56,9 +52,7 @@ resource "google_project_service" "required_apis" {
   disable_on_destroy = false
 }
 
-# ========================
-# 3. ARTIFACT REGISTRY
-# ========================
+# Creates a private Docker repository in Artifact Registry with  depends_on: Waits for required APIs to be enabled before creation.
 resource "google_artifact_registry_repository" "insight_agent" {
   repository_id = "insight-agent"
   location      = var.region
@@ -85,9 +79,7 @@ resource "google_artifact_registry_repository" "insight_agent" {
   ]
 }
 
-# ========================
-# 4. SERVICE ACCOUNT
-# ========================
+# Creates a service account for the Cloud Run service with minimal-permission access control
 resource "google_service_account" "insight_agent" {
   account_id   = "insight-agent-sa"
   display_name = "Insight Agent Service Account"
@@ -107,9 +99,7 @@ resource "google_service_account" "insight_agent" {
   ]
 }
 
-# ========================
-# 5. CLOUD RUN SERVICE
-# ========================
+# Deploys a Cloud Run service but ensure registry exists
 resource "google_cloud_run_service" "insight_agent" {
   name     = "insight-agent"
   location = var.region
@@ -144,9 +134,7 @@ resource "google_cloud_run_service" "insight_agent" {
   ]
 }
 
-# ========================
-# 6. ACCESS CONTROL
-# ========================
+# Grants public access to the Cloud Run service for http/s
 resource "google_cloud_run_service_iam_member" "public_access" {
   location = google_cloud_run_service.insight_agent.location
   service  = google_cloud_run_service.insight_agent.name
