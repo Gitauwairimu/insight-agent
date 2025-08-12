@@ -1,3 +1,4 @@
+# Required and versioned packages file
 fastapi==0.95.2
 uvicorn==0.22.0
 flake8
