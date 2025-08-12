@@ -5,6 +5,7 @@ from pydantic import BaseModel
 # FastAPI App Initialization
 app = FastAPI()
 
+
 # Defines the expected request format with a single text field
 class TextRequest(BaseModel):
     text: str
