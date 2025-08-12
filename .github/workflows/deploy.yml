@@ -9,7 +9,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GOOGLE_CREDENTIALS: ${{ secrets.GCP_SA_KEY }}
 
-jobs:
+jobfs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
