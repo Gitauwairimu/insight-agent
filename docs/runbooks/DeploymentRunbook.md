@@ -1,7 +1,4 @@
-Runbook: Insight Agent Deployment on Google Cloud
-Overview
 
-This runbook provides step-by-step instructions for deploying the Insight Agent application on Google Cloud Run using Terraform for infrastructure automation.
 # Deployment Runbook: Insight Agent on Google Cloud
 
 ## Overview
@@ -18,12 +15,13 @@ This runbook provides step-by-step instructions for deploying the **Insight Agen
 
 ---
 
+```bash 
 ## Step 1: Set Up Google Cloud Project
 
 ### 1.1 Create or Select a GCP Project
 Run the following commands to create and set your GCP project:
 
-```bash
+
 gcloud projects create PROJECT_ID --name="Insight Agent"
 gcloud config set project PROJECT_ID
 
